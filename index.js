@@ -9,7 +9,7 @@ const cloudinary = require('cloudinary').v2;
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
   api_key: process.env.API_KEY,
-  api_secret: process.env.API_SECRET
+  api_secret: process.env.API_SECRET,
 });
 
 // Function to upload an image to Cloudinary and return the URL and filename
@@ -37,14 +37,14 @@ function uploadImagesInBatches(imagePaths, uploadConfig, batchSize, timeout) {
     const batchImagePaths = imagePaths.slice(startIndex, endIndex);
     const batchPromise = new Promise((resolve, reject) => {
       setTimeout(() => {
-        Promise.all(batchImagePaths.map(file =>
-          uploadImage(file, uploadConfig)
-        ))
-          .then(results => {
+        Promise.all(
+          batchImagePaths.map((file) => uploadImage(file, uploadConfig)),
+        )
+          .then((results) => {
             console.log(`Batch ${i + 1} uploaded successfully.`);
             resolve(results);
           })
-          .catch(error => {
+          .catch((error) => {
             console.error(`Failed to upload batch ${i + 1}:`, error);
             reject(error);
           });
@@ -53,13 +53,12 @@ function uploadImagesInBatches(imagePaths, uploadConfig, batchSize, timeout) {
     batchPromises.push(batchPromise);
   }
 
-  return Promise.all(batchPromises)
-    .then(batchResults => batchResults.flat());
+  return Promise.all(batchPromises).then((batchResults) => batchResults.flat());
 }
 
 // Get a list of all image files in the "./still" folder
 const folderPath = './still';
-const imageFiles = fs.readdirSync(folderPath).filter(file => {
+const imageFiles = fs.readdirSync(folderPath).filter((file) => {
   const extension = path.extname(file).toLowerCase();
   return extension === '.jpg' || extension === '.jpeg' || extension === '.png';
 });
@@ -71,38 +70,39 @@ const imageDetails = [];
 const csvPath = './imageURLs.csv';
 const csvWriterInstance = csvWriter({
   path: csvPath,
-  header: [{ id: 'filename', title: 'Filename' }, { id: 'url', title: 'URL' }]
+  header: [
+    { id: 'filename', title: 'Filename' },
+    { id: 'url', title: 'URL' },
+  ],
 });
 
 // Upload images in batches and store their URLs and filenames
-uploadImagesInBatches(imageFiles.map(file => path.join(folderPath, file)), {
-  width: 2000,
-  height: 2000,
-  trim: 'trim',
-  crop: 'fill',
-  pad: '20',
-  background: 'white',
-  gravity: 'center',
-}, 5, 500)
-  .then(results => {
+uploadImagesInBatches(
+  imageFiles.map((file) => path.join(folderPath, file)),
+  {},
+  5,
+  500,
+)
+  .then((results) => {
     imageDetails.push(...results);
     console.log('All images uploaded successfully.');
 
     // Create an array of record objects for all the images
-    const records = imageDetails.map(details => ({
+    const records = imageDetails.map((details) => ({
       filename: details.filename,
-      url: details.url
+      url: details.url,
     }));
 
     // Write the records to the CSV file
-    csvWriterInstance.writeRecords(records)
+    csvWriterInstance
+      .writeRecords(records)
       .then(() => {
         console.log(`Image details saved to ${csvPath}`);
       })
-      .catch(error => {
+      .catch((error) => {
         console.error('Failed to save image details to CSV:', error);
       });
   })
-  .catch(error => {
+  .catch((error) => {
     console.error('Failed to upload images:', error);
   });
